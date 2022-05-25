@@ -9,7 +9,8 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { verify } = require("jsonwebtoken");
 require("dotenv").config();
 
 //configuration
@@ -23,8 +24,22 @@ app.use(cors());
 
 // ! middleware for verify user access .
 function verifyJWT(req, res, next) {
-  console.log("from mid");
-  next();
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).send({ message: "Unauthorized Access" });
+  } else {
+    const accessToken = authHeader.split(" ")[1];
+
+    jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+      if (err) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      } else {
+        req.decoded = decoded;
+        next();
+      }
+    });
+  }
 }
 
 app.get("/", (req, res) => {
@@ -43,7 +58,7 @@ async function run() {
   try {
     await client.connect();
     //! --- collection start --------
-    const allPartsCollection = await client
+    const partsCollection = await client
       .db("computer-zone")
       .collection("parts");
     const userCollection = await client.db("computer-zone").collection("user");
@@ -52,7 +67,14 @@ async function run() {
 
     //     ? send all parts data to the client
     app.get("/parts", verifyJWT, async (req, res) => {
-      const result = await allPartsCollection.find().toArray();
+      const result = await partsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // ? get single parts data
+    app.get("/parts/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await partsCollection.findOne({ _id: ObjectId(id) });
       res.send(result);
     });
 
@@ -72,8 +94,6 @@ async function run() {
 
       res.send({ result, accessToken });
     });
-
-    
   } catch (err) {
     console.log(err);
   }
