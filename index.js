@@ -62,19 +62,32 @@ async function run() {
       .db("computer-zone")
       .collection("parts");
     const userCollection = await client.db("computer-zone").collection("user");
+    const bookingCollection = await client
+      .db("computer-zone")
+      .collection("booking");
+    const reviewCollection = await client
+      .db("computer-zone")
+      .collection("reviews");
 
     //! --- collection end --------
 
     //     ? send all parts data to the client
-    app.get("/parts", verifyJWT, async (req, res) => {
+    app.get("/parts", async (req, res) => {
       const result = await partsCollection.find().toArray();
       res.send(result);
     });
 
     // ? get single parts data
-    app.get("/parts/:id", async (req, res) => {
+    app.get("/parts/:id", verifyJWT, async (req, res) => {
       const { id } = req.params;
+
       const result = await partsCollection.findOne({ _id: ObjectId(id) });
+      res.send(result);
+    });
+
+    // ? send all user reviews data
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewCollection.find().toArray();
       res.send(result);
     });
 
@@ -93,6 +106,13 @@ async function run() {
       });
 
       res.send({ result, accessToken });
+    });
+
+    // ? save booking information
+    app.post("/booking", verifyJWT, async (req, res) => {
+      const booking = req.body;
+      const result = await bookingCollection.insertOne(booking);
+      res.send(result);
     });
   } catch (err) {
     console.log(err);
