@@ -91,6 +91,13 @@ async function run() {
       res.send(result);
     });
 
+    // ? save users review data to the server
+    app.post("/reviews", verifyJWT, async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+
     // ? generate a token when user create new account or login .
     app.put("/user/:email", async (req, res) => {
       const { email } = req.params;
@@ -114,6 +121,17 @@ async function run() {
       const result = await bookingCollection.insertOne(booking);
       res.send(result);
     });
+
+    // ? send booking data to the client
+    app.get('/booking',async(req, res)=> {
+      const {email} = req.query ;
+
+      const result = await bookingCollection.find({email : email}).toArray()
+      res.send(result)
+
+    })
+
+
   } catch (err) {
     console.log(err);
   }
