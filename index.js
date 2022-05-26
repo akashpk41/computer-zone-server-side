@@ -12,7 +12,7 @@ const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { verify } = require("jsonwebtoken");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-require("dotenv").config();
+require("dotenv").config({ path: "./vars/.env" });
 //configuration
 const app = express();
 
