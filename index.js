@@ -73,8 +73,22 @@ async function run() {
     const paymentCollection = await client
       .db("computer-zone")
       .collection("payment");
-
     //! --- collection end --------
+
+    // ! verify admin
+    const verifyAdmin = async (req, res, next) => {
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      // console.log(requesterAccount);
+      // ! check  the user admin or not.
+      if (requesterAccount.role === "admin") {
+        next();
+      } else {
+        res.status(403).send({ message: "Forbidden Access" });
+      }
+    };
 
     //     ? send all parts data to the client
     app.get("/parts", async (req, res) => {
@@ -189,15 +203,34 @@ async function run() {
     });
 
     // ? make an user to an admin
-    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+    app.put("/user/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
       const { email } = req.params;
-      const filter = { email: email };
 
+      const filter = { email: email };
       const updateDoc = {
         $set: { role: "admin" },
       };
       const result = await userCollection.updateOne(filter, updateDoc);
 
+      res.send(result);
+    });
+
+    //  ? get admin status
+    app.get("/admin/:email", async (req, res) => {
+      const { email } = req.params;
+      const user = await userCollection.findOne({
+        email: email,
+      });
+      // console.log(user.role);
+
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
+    });
+
+    // ? add computer parts information in the database .
+    app.post("/parts", verifyJWT, verifyAdmin, async (req, res) => {
+      const parts = req.body;
+      const result = await partsCollection.insertOne(parts);
       res.send(result);
     });
 
