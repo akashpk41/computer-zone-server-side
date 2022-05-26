@@ -11,8 +11,8 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { verify } = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 require("dotenv").config();
-
 //configuration
 const app = express();
 
@@ -123,15 +123,36 @@ async function run() {
     });
 
     // ? send booking data to the client
-    app.get('/booking',async(req, res)=> {
-      const {email} = req.query ;
+    app.get("/booking", verifyJWT, async (req, res) => {
+      const { email } = req.query;
+      // ! check valid user then send data .
+      const decodedEmail = req.decoded.email;
+      if (email === decodedEmail) {
+        const result = await bookingCollection.find({ email: email }).toArray();
+        res.send(result);
+      } else {
+        res.status(403).send({ message: "Forbidden Access" });
+      }
+    });
 
-      const result = await bookingCollection.find({email : email}).toArray()
-      res.send(result)
+    // ? send a single booking data to the client
+    app.get("/booking/:id", verifyJWT, async (req, res) => {
+      const { id } = req.params;
+      const result = await bookingCollection.findOne({ _id: ObjectId(id) });
+      res.send(result);
+    });
 
-    })
-
-
+    //? save payment information in the server
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = price * 100;
+      const paymentIntent = await stripe.createPaymentIntents.create({
+        amount,
+        currency: "bdt",
+        payment_method_types: ["card"],
+      });
+      res.send({ clientSecret: paymentIntent.client_secret });
+    });
   } catch (err) {
     console.log(err);
   }
