@@ -149,6 +149,7 @@ async function run() {
       const updatedDoc = {
         $set: {
           paid: true,
+          status: "pending",
           transactionId: payment.transactionId,
         },
       };
@@ -180,6 +181,27 @@ async function run() {
       });
       res.send({ clientSecret: paymentIntent.client_secret });
     });
+
+    // ! --------- For Admin Dashboard ----------
+    app.get("/user", verifyJWT, async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+
+    // ? make an user to an admin
+    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+      const { email } = req.params;
+      const filter = { email: email };
+
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+
+      res.send(result);
+    });
+
+    // ! --------- For Admin Dashboard ----------
   } catch (err) {
     console.log(err.message);
   }
