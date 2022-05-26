@@ -196,7 +196,7 @@ async function run() {
       res.send({ clientSecret: paymentIntent.client_secret });
     });
 
-    // ! --------- For Admin Dashboard ----------
+    // ! --------- For Admin Dashboard Starts ----------
     app.get("/user", verifyJWT, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
@@ -234,7 +234,14 @@ async function run() {
       res.send(result);
     });
 
-    // ! --------- For Admin Dashboard ----------
+    // ? delete a single computer parts from the database
+    app.delete("/parts/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await partsCollection.deleteOne({ _id: ObjectId(id) });
+      res.send(result);
+    });
+
+    // ! --------- For Admin Dashboard Ends ----------
   } catch (err) {
     console.log(err.message);
   }
