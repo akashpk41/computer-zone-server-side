@@ -11,7 +11,9 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { verify } = require("jsonwebtoken");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(
+  "sk_test_51L3Z2yKqOwHYefqRxypeZ6pKyRUT9EmuuY1xjM1MCk2Tj7LaGfMs3MvGEe4HwKhr0F1AE1YZpv3MBEqoMuYXYwlu00tmPS2Iox"
+);
 require("dotenv").config({ path: "./vars/.env" });
 //configuration
 const app = express();
@@ -68,6 +70,9 @@ async function run() {
     const reviewCollection = await client
       .db("computer-zone")
       .collection("reviews");
+    const paymentCollection = await client
+      .db("computer-zone")
+      .collection("payment");
 
     //! --- collection end --------
 
@@ -135,6 +140,27 @@ async function run() {
       }
     });
 
+    // ! save payment data in the server
+
+    app.patch("/booking/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const payment = req.body;
+      const filter = { _id: ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+        },
+      };
+
+      const result = await paymentCollection.insertOne(payment);
+      const updatedBooking = await bookingCollection.updateOne(
+        filter,
+        updatedDoc
+      );
+      res.send(updatedBooking);
+    });
+
     // ? send a single booking data to the client
     app.get("/booking/:id", verifyJWT, async (req, res) => {
       const { id } = req.params;
@@ -145,16 +171,17 @@ async function run() {
     //? save payment information in the server
     app.post("/create-payment-intent", verifyJWT, async (req, res) => {
       const { price } = req.body;
+
       const amount = price * 100;
-      const paymentIntent = await stripe.createPaymentIntents.create({
-        amount,
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
         currency: "bdt",
         payment_method_types: ["card"],
       });
       res.send({ clientSecret: paymentIntent.client_secret });
     });
   } catch (err) {
-    console.log(err);
+    console.log(err.message);
   }
 }
 
