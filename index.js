@@ -220,6 +220,20 @@ async function run() {
       res.send(result);
     });
 
+    // ? update user profile information
+    app.put("/user/profile/:email", verifyJWT, async (req, res) => {
+      const { email } = req.params;
+      const updatedUserInfo = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: updatedUserInfo,
+      };
+      const result = await userProfileCollection.updateOne(filter, updateDoc, options);
+
+      res.send(result);
+    });
+
     // ! --------- For Admin Dashboard Starts ----------
     app.get("/user", verifyJWT, async (req, res) => {
       const result = await userCollection.find().toArray();
