@@ -73,6 +73,9 @@ async function run() {
     const paymentCollection = await client
       .db("computer-zone")
       .collection("payment");
+    const userProfileCollection = await client
+      .db("computer-zone")
+      .collection("userProfile");
     //! --- collection end --------
 
     // ! verify admin
@@ -155,13 +158,13 @@ async function run() {
     });
 
     // ? delete a single booking item
-    app.delete('/booking/:id',async (req, res)=>{
-      const {id} = req.params;
-      const result = await bookingCollection.deleteOne({ _id: ObjectId(id) })
-      res.send(result)
-    })
+    app.delete("/booking/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await bookingCollection.deleteOne({ _id: ObjectId(id) });
+      res.send(result);
+    });
 
-    // ! save payment data in the server
+    // ! save payment data in the database
 
     app.patch("/booking/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
@@ -190,7 +193,7 @@ async function run() {
       res.send(result);
     });
 
-    //? save payment information in the server
+    //? save payment information in the database
     app.post("/create-payment-intent", verifyJWT, async (req, res) => {
       const { price } = req.body;
 
@@ -201,6 +204,20 @@ async function run() {
         payment_method_types: ["card"],
       });
       res.send({ clientSecret: paymentIntent.client_secret });
+    });
+
+    // ? save user profile information in the database
+    app.post("/user/profile", verifyJWT, async (req, res) => {
+      const data = req.body;
+      const result = await userProfileCollection.insertOne(data);
+      res.send(result);
+    });
+
+    // ? send user profile information to the client
+    app.get("/user/profile/:email", verifyJWT, async (req, res) => {
+      const { email } = req.params;
+      const result = await userProfileCollection.findOne({ email: email });
+      res.send(result);
     });
 
     // ! --------- For Admin Dashboard Starts ----------
@@ -246,6 +263,39 @@ async function run() {
       const { id } = req.params;
       const result = await partsCollection.deleteOne({ _id: ObjectId(id) });
       res.send(result);
+    });
+
+    // ? delete a user from the database
+    app.delete("/user/:email", verifyJWT, verifyAdmin, async (req, res) => {
+      const { email } = req.params;
+      const result = await userCollection.deleteOne({ email: email });
+      res.send(result);
+    });
+
+    // ? send all booking/order data to the client
+    app.get("/order", verifyJWT, verifyAdmin, async (req, res) => {
+      const result = await bookingCollection.find().toArray();
+      res.send(result);
+    });
+
+    // ? update pending order to shipped
+
+    app.put("/order/:id", verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          status: "shipped",
+        },
+      };
+
+      const updatedBooking = await bookingCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(updatedBooking);
     });
 
     // ! --------- For Admin Dashboard Ends ----------
