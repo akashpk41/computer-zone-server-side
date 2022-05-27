@@ -154,6 +154,13 @@ async function run() {
       }
     });
 
+    // ? delete a single booking item
+    app.delete('/booking/:id',async (req, res)=>{
+      const {id} = req.params;
+      const result = await bookingCollection.deleteOne({ _id: ObjectId(id) })
+      res.send(result)
+    })
+
     // ! save payment data in the server
 
     app.patch("/booking/:id", verifyJWT, async (req, res) => {
@@ -235,7 +242,7 @@ async function run() {
     });
 
     // ? delete a single computer parts from the database
-    app.delete("/parts/:id", async (req, res) => {
+    app.delete("/parts/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const { id } = req.params;
       const result = await partsCollection.deleteOne({ _id: ObjectId(id) });
       res.send(result);
