@@ -217,7 +217,7 @@ async function run() {
     app.get("/user/profile/:email", verifyJWT, async (req, res) => {
       const { email } = req.params;
       const result = await userProfileCollection.findOne({ email: email });
-      res.send(result);
+      res.send(result); 
     });
 
     // ? update user profile information
