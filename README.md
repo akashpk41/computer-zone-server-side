@@ -4,7 +4,7 @@
 
 ### Live Site Link : https://computer-zone-ce82a.web.app/
 
-### Client Side Repository Link : https://github.com/programming-hero-web-course1/manufacturer-website-client-side-akashpk41
+### Client Side Repository Link : https://github.com/akashpk41/computer-zone-client-side
 
 - Technologies used in this website : `React` `Tailwind CSS` `Node JS` `Express JS` `MongoDB` `Firebase` `JWT` `Stripe`
 
